@@ -336,7 +336,7 @@ class LogisticRegressionWithAdam(private var numIterations: Int = 1000,
     ss.createDataFrame(Seq(data)).repartition(1).write.parquet(dataPath)
   }
 
-  def save(ss: SparkSession, path: String = "LR-LBFGS"): Unit = {
+  def save(ss: SparkSession, path: String = "LogisticRegressionWithAdam"): Unit = {
     save(ss, path, Data(Option(model), numFeatures, classNum))
   }
 

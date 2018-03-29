@@ -297,7 +297,7 @@ class LogisticRegressionWithLBFGS(private var numIterations: Int = 100,
     ss.createDataFrame(Seq(data)).repartition(1).write.parquet(dataPath)
   }
 
-  def save(ss: SparkSession, path: String = "LR-LBFGS"): Unit = {
+  def save(ss: SparkSession, path: String = "LogisticRegressionWithLBFGS"): Unit = {
     save(ss, path, Data(Option(model), Option(dataMeanValue), numFeatures, classNum))
   }
 

@@ -2,7 +2,7 @@
 This is a spark tool for training LR, FM and some click models. It supports FM Softmax, LR Softmax using SGD, Momentum,
 Nesterov Momentum, Adagrad, RMSProp, Adam, FTRL, LBFGS and OWLQN. ClickModels such as no-bias two-stage LR, BBM, UBM
 and DBN are also implemented. I wrote this simple tool because of the poor performance of spark inherent LR. The gradient
-and label point is defined not reasonable. In our click train sets, LR-LBFGS is 30 times faster than the source code
+and label point is not reasonably defined. In our click train sets, LR-LBFGS is 30 times faster than the source code
 without any result loss. But in online learning, may be same.
 
 

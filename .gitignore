@@ -1,0 +1,17 @@
+# Created by .ignore support plugin (hsz.mobi)
+.DS_Store
+.gitignore
+.idea/workspace.xml
+project/.DS_Store
+project/project/
+project/target/
+spark-warehouse/
+src/.DS_Store
+src/main/.DS_Store
+src/main/resources/
+src/main/scala-2.10/
+src/main/scala-2.11/.DS_Store
+src/main/scala-2.11/com/.DS_Store
+src/main/scala/
+src/test/
+target/
