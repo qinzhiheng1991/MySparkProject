@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="hadoop-lzo-cdh5-0.4.15">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Downloads/hadoop-lzo-cdh5-0.4.15.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
