@@ -16,7 +16,6 @@ http://www.bpiwowar.net/wp-content/papercite-data/pdf/dupret2008a-user-browsing.
 DBN click model:
 http://olivier.chapelle.cc/pub/DBN_www2009.pdf
 
-
 # Examples
 ## Scala API
 ```scala

@@ -148,10 +148,6 @@ object SparkDBNModeler extends Logging {
         s_u_map.clear()
       }
 
-      val model = new DBNModel(max_queries, max_url_per_query, withIntent)
-      model.new_a_u_array = Option(new_a_u_array.result())
-      model.new_s_u_array = Option(new_s_u_array.result())
-
       delta /= count
       q_functional /= count
       log_loss /= count
@@ -160,80 +156,85 @@ object SparkDBNModeler extends Logging {
       s_u_br = sc.broadcast(new_s_u_array.result())
     }
 
-    // compute posterior probability
-    def getSessionEstimates(paras: Array[Array[Array[Double]]],
-                            clicks: Array[Int],
-                            gammas:Array[Double],
-                            intent: Int) = {
-      val N = clicks.length
-      val gamma = gammas(intent)
-      val sessionEstimate = Array.tabulate[Double](2, N)((i, j) => 0.0)
-      val (alpha, beta) = getForwardBackwardEstimates(paras, clicks, gammas, intent)
-      val varphi = Array.tabulate[Double](N, 2)((i, j) => {
-        alpha(i)(j) * beta(i)(j)/(alpha(i)(0) * beta(i)(0) + alpha(i)(1) * beta(i)(1))
-      })
-      val observe = alpha(0)(0) * beta(0)(0) + alpha(0)(1) * beta(0)(1)
-      var index = 0
-      while (index < N) {
-        val a_u = paras(intent)(0)(index)
-        val s_u = paras(intent)(1)(index)
-        if (clicks(index) == 0) {
-          sessionEstimate(0)(index) = a_u * varphi(index)(0)
-          sessionEstimate(1)(index) = 0.0
-        } else {
-          sessionEstimate(0)(index) = 1.0
-          sessionEstimate(1)(index) = varphi(index + 1)(0) * s_u / (s_u + (1 - gamma) * (1 - s_u))
-        }
-        index += 1
-      }
-      (sessionEstimate, observe)
-    }
+    val model = new DBNModel(max_queries, max_url_per_query, withIntent)
+    model.new_a_u_array = Option(new_a_u_array.result())
+    model.new_s_u_array = Option(new_s_u_array.result())
+    model
+  }
 
-    def getForwardBackwardEstimates(paras: Array[Array[Array[Double]]],
-                                    clicks: Array[Int],
-                                    gammas: Array[Double],
-                                    intent: Int) = {
-      val N = clicks.length
-      val alpha = Array.tabulate[Double](N + 1, 2)((i, j) => 0.0)
-      val beta = Array.tabulate[Double](N + 1, 2)((i, j) => 0.0)
-      // alpha(i) = P(C1,...,Ci-1,Ei=e), beta = P(Ci,...,C10|Ei)
-      // alpha(i + 1) = sum{e'=0,1}(alpha(i) * P(Ei+1=e',Ci|Ei = e))
-      alpha(0)(1) = 1.0  // boundary conditions, P(E0 = 1) = 1, P(E0 = 0) = 0, examine exists
-      alpha(0)(0) = 0.0
-      beta(N)(0) = 1.0 // boundary conditions, P(|E10 = 1) = 1, P(|E10 = 0) = 1
-      beta(N)(1) = 1.0
-      // transition probability P(Ei+1=e',Ci|Ei = e)
-      val updateMatrix = Array.tabulate[Double](N, 2, 2)((i, j, k) => 0.0)
-      val gamma = gammas(intent)
-      var index = 0
-      var click = 0
-      //compute posterior probability
-      while (index < N) {
-        click = clicks(index)
-        val a_u = paras(intent)(0)(index)
-        val s_u = paras(intent)(1)(index)
-        if (click == 0) {
-          updateMatrix(index)(0)(0) = 1
-          updateMatrix(index)(0)(1) = (1 - gamma) * (1 - a_u)
-          updateMatrix(index)(1)(0) = 0
-          updateMatrix(index)(1)(1) = gamma * (1 - a_u)
-        } else {
-          updateMatrix(index)(0)(0) = 0
-          updateMatrix(index)(0)(1) = (s_u + (1 - gamma) * (1 - s_u)) * a_u
-          updateMatrix(index)(1)(0) = 0
-          updateMatrix(index)(1)(1) = gamma * (1 - s_u) * a_u
-        }
-        index += 1
+  // compute posterior probability
+  def getSessionEstimates(paras: Array[Array[Array[Double]]],
+                          clicks: Array[Int],
+                          gammas:Array[Double],
+                          intent: Int) = {
+    val N = clicks.length
+    val gamma = gammas(intent)
+    val sessionEstimate = Array.tabulate[Double](2, N)((i, j) => 0.0)
+    val (alpha, beta) = getForwardBackwardEstimates(paras, clicks, gammas, intent)
+    val varphi = Array.tabulate[Double](N, 2)((i, j) => {
+      alpha(i)(j) * beta(i)(j)/(alpha(i)(0) * beta(i)(0) + alpha(i)(1) * beta(i)(1))
+    })
+    val observe = alpha(0)(0) * beta(0)(0) + alpha(0)(1) * beta(0)(1)
+    var index = 0
+    while (index < N) {
+      val a_u = paras(intent)(0)(index)
+      val s_u = paras(intent)(1)(index)
+      if (clicks(index) == 0) {
+        sessionEstimate(0)(index) = a_u * varphi(index)(0)
+        sessionEstimate(1)(index) = 0.0
+      } else {
+        sessionEstimate(0)(index) = 1.0
+        sessionEstimate(1)(index) = varphi(index + 1)(0) * s_u / (s_u + (1 - gamma) * (1 - s_u))
       }
-      index = 0
-      while (index < N) {
-        for (i <- 0 until 2) {
-          alpha(index + 1)(i) = alpha(index)(0) * updateMatrix(index)(i)(0) + alpha(index)(1) * updateMatrix(index)(i)(1)
-          beta(N-index-1)(i) = beta(N-index)(0) * updateMatrix(N-index-1)(i)(0) + beta(N-index)(1) * updateMatrix(N-index-1)(i)(1)
-        }
-      }
-      (alpha, beta)
+      index += 1
     }
+    (sessionEstimate, observe)
+  }
+
+  def getForwardBackwardEstimates(paras: Array[Array[Array[Double]]],
+                                  clicks: Array[Int],
+                                  gammas: Array[Double],
+                                  intent: Int) = {
+    val N = clicks.length
+    val alpha = Array.tabulate[Double](N + 1, 2)((i, j) => 0.0)
+    val beta = Array.tabulate[Double](N + 1, 2)((i, j) => 0.0)
+    // alpha(i) = P(C1,...,Ci-1,Ei=e), beta = P(Ci,...,C10|Ei)
+    // alpha(i + 1) = sum{e'=0,1}(alpha(i) * P(Ei+1=e',Ci|Ei = e))
+    alpha(0)(1) = 1.0  // boundary conditions, P(E0 = 1) = 1, P(E0 = 0) = 0, examine exists
+    alpha(0)(0) = 0.0
+    beta(N)(0) = 1.0 // boundary conditions, P(|E10 = 1) = 1, P(|E10 = 0) = 1
+    beta(N)(1) = 1.0
+    // transition probability P(Ei+1=e',Ci|Ei = e)
+    val updateMatrix = Array.tabulate[Double](N, 2, 2)((i, j, k) => 0.0)
+    val gamma = gammas(intent)
+    var index = 0
+    var click = 0
+    //compute posterior probability
+    while (index < N) {
+      click = clicks(index)
+      val a_u = paras(intent)(0)(index)
+      val s_u = paras(intent)(1)(index)
+      if (click == 0) {
+        updateMatrix(index)(0)(0) = 1
+        updateMatrix(index)(0)(1) = (1 - gamma) * (1 - a_u)
+        updateMatrix(index)(1)(0) = 0
+        updateMatrix(index)(1)(1) = gamma * (1 - a_u)
+      } else {
+        updateMatrix(index)(0)(0) = 0
+        updateMatrix(index)(0)(1) = (s_u + (1 - gamma) * (1 - s_u)) * a_u
+        updateMatrix(index)(1)(0) = 0
+        updateMatrix(index)(1)(1) = gamma * (1 - s_u) * a_u
+      }
+      index += 1
+    }
+    index = 0
+    while (index < N) {
+      for (i <- 0 until 2) {
+        alpha(index + 1)(i) = alpha(index)(0) * updateMatrix(index)(i)(0) + alpha(index)(1) * updateMatrix(index)(i)(1)
+        beta(N-index-1)(i) = beta(N-index)(0) * updateMatrix(N-index-1)(i)(0) + beta(N-index)(1) * updateMatrix(N-index-1)(i)(1)
+      }
+    }
+    (alpha, beta)
   }
 
   class DBNModel(val max_queries: Long,

@@ -4,7 +4,6 @@ import com.github.fommil.netlib.BLAS.{getInstance => NativeBLAS}
 import com.github.fommil.netlib.{F2jBLAS, BLAS => NetlibBLAS}
 import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg._
-
 import scala.collection.mutable
 
 object BLAS extends Serializable {
