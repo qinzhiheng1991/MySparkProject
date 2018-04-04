@@ -103,7 +103,6 @@ class TwoStageModelGradient extends Gradient {
       s"in ${this.getClass.getName}, breakpoint is wrong, do not match")
     require(num.length == 2,
       s"n ${this.getClass.getName}, multi-stage only supports binary classification")
-    val numFeature = data.size
     val weightsCopy = dividends(0).copy
     val weightsCopyValues = weightsCopy.toDense.values
     var sum1 = 0.0
@@ -120,15 +119,13 @@ class TwoStageModelGradient extends Gradient {
     val grad1 = (num(1) * (sum1 - 1) + (num(0) + num(1)) * sum1 * sum2 * (1 - sum1)) / (1 - sum1 * sum2)
     val grad2 = (num(1) * (sum2 - 1) + (num(0) + num(1)) * sum1 * sum2 * (1 - sum2)) / (1 - sum1 * sum2)
     val cumGradientValue = cumGradient.toDense.values
-    var index = 0
-    while (index < numFeature) {
-      if (index < breakpoint) {
-        cumGradientValue(index) += grad1 * data(index)
+    data.foreachActive((i, value) => {
+      if (i < breakpoint) {
+        cumGradientValue(i) += grad1 * value
       } else {
-        cumGradientValue(index) += grad2 * data(index)
+        cumGradientValue(i) += grad2 * value
       }
-      index += 1
-    }
+    })
     val loss = -1.0 * num(1) * math.log(sum1 * sum2) - num(0) * math.log(1 - sum1 * sum2)
     loss
   }
