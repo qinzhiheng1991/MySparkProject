@@ -4,6 +4,7 @@ import com.spark.mlib.log.Logging
 import org.apache.spark.rdd.RDD
 /**
   * refer: http://www.bpiwowar.net/wp-content/papercite-data/pdf/dupret2008a-user-browsing.pdf
+  * borrowed from: https://blog.csdn.net/song0601013ndsc/article/details/47950603
   */
 
 object SparkUBMModeler extends Logging {

@@ -57,13 +57,13 @@ object BBMExam {
         val distance = pos - preced_click_pos
         if (segs(i + 1).trim.equals("1")) {
           if (preced_click_pos > 0) {
-            arrBuf += Tuple2[String, Double](preced_click_pos + "\t" + distance + "\t" + 1, 1)
+            arrBuf += Tuple2(preced_click_pos + "\t" + distance + "\t" + 1, 1)
           }
           preced_click_pos = pos
         }
         else {
           if (preced_click_pos > 0) {
-            arrBuf += Tuple2[String, Double](preced_click_pos + "\t" + distance + "\t" + 0, 1)
+            arrBuf += Tuple2(preced_click_pos + "\t" + distance + "\t" + 0, 1)
           }
         }
       }
